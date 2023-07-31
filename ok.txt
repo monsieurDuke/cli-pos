@@ -1,0 +1,6 @@
+Command 'pawd' not found, did you mean:
+  command 'pwd' from deb coreutils (8.32-4.1ubuntu1)
+Try: sudo apt install <deb name>
+Command 'pawd' not found, did you mean:
+  command 'pwd' from deb coreutils (8.32-4.1ubuntu1)
+Try: sudo apt install <deb name>

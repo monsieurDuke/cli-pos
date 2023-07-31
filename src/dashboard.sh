@@ -10,7 +10,7 @@ case $2 in
 		--no-cancel \
 		--menu "$1 ($2)\nChoose Available Options" 4 0 0 \
 		"Menu"     "Edit Kitchen's Menu Items & Categories" \
-		"Order"    "Create Dine-In or Delivery Order" \
+		"Order"    "Create Dine-In & Delivery Order" \
 		"Account"  "Manage User Account's Details" \
 		"Reciept"  "Review All Past Transactions" \
 		"History"  "Review All Past Event Logs" \
@@ -25,7 +25,7 @@ case $2 in
 		--no-cancel \
 		--menu "$1 ($2)\nChoose Available Options" 8 0 0 \
 		"Menu"    "Edit Kitchen's Menu Items & Categories" \
-		"Order"   "Create Dine-In or Delivery Order" \
+		"Order"   "Create Dine-In & Delivery Order" \
 		"Reciept" "Review Past Transactions" \
 		"Logout"  "Switch User Account" > tmp/opt.lock 2>&1 >/dev/tty
 		;;
@@ -34,4 +34,5 @@ esac
 opt=`cat tmp/opt.lock`
 case $opt in
 	"Logout") bash pos.sh ;; "Exit") exit 0 ;; "Account") bash src/opt-account.sh $1 $2 ;;
+	"Menu") bash src/opt-menu.sh $1 $2 ;;
 esac

@@ -3,16 +3,23 @@
 trap '' 2 
 stty susp undef
 ## ------------------
-arr_opt=($(cat data/user.csv | tr -s ',' ' ' | cut -d ' ' -f 1,3))
+cat data/user.csv | sort > /tmp/sort && cp /tmp/sort data/user.csv 
+arr_opt=()
+while read x y; do
+	lst_name="$(echo $x | cut -d ',' -f 3) $(echo $y | cut -d ',' -f 1)"
+	lst_user=$(echo $x | cut -d ',' -f 1)
+	arr_opt+=($lst_user "$lst_name")
+done < data/user.csv
+## ------------------
 dialog --title " Account " \
 --ok-label "Edit" \
 --cancel-label "<--" \
 --menu "$1 ($2)\nChoose Available Account" 8 0 0 \
-"** New"    "Create New User Account" \
+"** Account"    "Create New User Account" \
 "${arr_opt[@]}" > tmp/opt-acc.lock 2>&1 >/dev/tty
 case "$?" in
 	0)
-		if [[ $(cat tmp/opt-acc.lock) == "** New" ]]; then
+		if [[ $(cat tmp/opt-acc.lock) == "** Account" ]]; then
 			dialog --title " Account [new] " \
 			--ok-label "  Done " \
 			--cancel-label "<--" \
@@ -31,7 +38,7 @@ case "$?" in
 					new_role=`sed -n 4p tmp/user-creation.lock`
 					new_phone=`sed -n 5p tmp/user-creation.lock`				
 					if [[ "$new_username" && "$new_fullname" && "$new_password" && "$new_role" && "$new_phone" ]]; then
-						fullname_mod=$(echo "$new_fullname" | tr -s ' ' '_')
+						fullname_mod=$(echo "$new_fullname" | tr -s ',' ' ')
 						password_mod=$(echo "$new_password" | md5sum | cut -d ' ' -f 1)
 						[[ $(echo $new_role | tr [:upper:] [:lower:]) == "admin" ]] || new_role="staff"
 						echo "$new_username,$password_mod,$fullname_mod,$new_role,$new_phone" >> data/user.csv
@@ -45,7 +52,7 @@ case "$?" in
 			old_username=`sed -n 1p tmp/user-modification.lock`
 			old_password=`sed -n 2p tmp/user-modification.lock`			
 			old_fullname=`sed -n 3p tmp/user-modification.lock`
-			old_fullname_mod=`echo $old_fullname | tr -s '_' ' '`									
+			old_fullname_mod=$old_fullname									
 			old_role=`sed -n 4p tmp/user-modification.lock`
 			old_phone=`sed -n 5p tmp/user-modification.lock`
 			dialog --title " Account [modified] " \
@@ -68,7 +75,7 @@ case "$?" in
 					new_role=`sed -n 4p tmp/user-modification.lock`
 					new_phone=`sed -n 5p tmp/user-modification.lock`				
 					if [[ "$new_username" && "$new_fullname" && "$new_role" && "$new_phone" ]]; then
-						fullname_mod=$(echo "$new_fullname" | tr -s ' ' '_')
+						fullname_mod=$(echo "$new_fullname" | tr -s ',' ' ')
 						if [[ "$new_password" ]]; then
 							password_mod=$(echo "$new_password" | md5sum | cut -d ' ' -f 1)
 						else
@@ -77,15 +84,22 @@ case "$?" in
 						[[ $(echo $new_role | tr [:upper:] [:lower:]) == "admin" ]] || new_role="staff"
 						old_entry=$(cat data/user.csv | grep -w $old_username)
 						sed -i "s/$old_entry/$new_username,$password_mod,$fullname_mod,$new_role,$new_phone/g" data/user.csv
+						if [[ "$old_username" == $1 ]]; then
+							[[ "$old_username" != "$new_username" ]] && set "$new_username" $2
+						fi						
 						bash src/opt-account.sh $1 $2
 					else dialog --title " Info " --msgbox "User account modification failed. Please fill all the mandatory fields!" 8 35; bash src/opt-account.sh $1 $2; fi
 					;;
 				3)
 					del_user=$(cat data/user.csv | grep -w $(cat tmp/opt-acc.lock))
-					if [[  ]] ## kalau username old sama dengan $!, ubah jadi new_username
-					sed -i "/$del_user/d" data/user.csv
-					dialog --title " Info " --msgbox "User account [$(cat tmp/opt-acc.lock)] have been deleted!" 8 35
-					bash src/opt-account.sh $1 $2
+					if [[ $(cat tmp/opt-acc.lock) == $1 ]]; then
+						dialog --title " Info " --msgbox "User account $(cat tmp/opt-acc.lock) cannot be deleted while still in use!" 8 35
+						bash src/opt-account.sh $1 $2			
+					else
+						sed -i "/$del_user/d" data/user.csv
+						dialog --title " Info " --msgbox "User account $(cat tmp/opt-acc.lock) have been deleted!" 8 35
+						bash src/opt-account.sh $1 $2
+					fi
 					;;
 				1) bash src/opt-account.sh $1 $2 ;;
 			esac
